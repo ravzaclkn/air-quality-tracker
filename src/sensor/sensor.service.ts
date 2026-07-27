@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { SensorReading } from './sensor-reading.entity';
+import { SensorGateway } from '../sensor.gateway';
 
 @Injectable()
 export class SensorService {
@@ -10,6 +11,7 @@ export class SensorService {
   constructor(
     @InjectRepository(SensorReading)
     private readonly sensorReadingRepository: Repository<SensorReading>,
+    private readonly sensorGateway: SensorGateway,
   ) {}
 
   getSensorStatus() {
@@ -25,7 +27,6 @@ export class SensorService {
   async saveReading(data: any) {
     this.logger.log(`Sensör verisi kaydediliyor: ${JSON.stringify(data)}`);
     
-    // Entity'deki alanlarla birebir eşleşen yapı (deviceId kaldırıldı)
     const reading = this.sensorReadingRepository.create({
       timestamp: data.timestamp,
       pm1_0: data.metrics?.pm1_0,
@@ -33,8 +34,10 @@ export class SensorService {
       pm4_0: data.metrics?.pm4_0,
       pm10: data.metrics?.pm10,
     });
+    const savedReading = await this.sensorReadingRepository.save(reading);
+    this.sensorGateway.sendSensorData(savedReading);
 
-    return await this.sensorReadingRepository.save(reading);
+    return savedReading;
   }
 
   async getLatestReading(): Promise<SensorReading | null> {
