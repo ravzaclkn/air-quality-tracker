@@ -3,24 +3,27 @@ import {Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColu
 @Entity('sensor_readings')
 export class SensorReading {
   @PrimaryGeneratedColumn()
-id: number;
+id!: number;
 
 @Column('float')
-pm1_0: number;
+pm1_0!: number;
 
 @Column('float')
-pm2_5: number;
+pm2_5!: number;
 
 @Column('float')
-pm4_0: number;
+pm4_0!: number;
 
 @Column('float')
-pm10: number;
+pm10!: number;
 
 
 @CreateDateColumn()
-CreatedAt: Date;
+CreatedAt!: Date;
 
 @UpdateDateColumn()
-UpdatedAt: Date;
+UpdatedAt!: Date;
+
+@Column({ type: 'datetime', nullable: true }) // veya 'timestamp'
+timestamp!: Date;
 }

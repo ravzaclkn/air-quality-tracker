@@ -9,6 +9,8 @@ async function bootstrap() {
     transport: Transport.MQTT,
     options: {
       url:'mqtt://localhost:1883', // mosquitto broker adresi, yerelde calisyorsa
+      username: 'sensor_user',
+      password: '123456',
     },
   });
 

@@ -9,7 +9,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
       isGlobal: true, // SensorModule'ün ConfigService'i görebilmesi için şart
     }),
     TypeOrmModule.forRoot({
-      type: 'sqlite',
+      type: 'better-sqlite3',
       database: 'database.sqlite',
       autoLoadEntities: true,   // Entity'lerin otomatik olarak yüklenmesini taninmasini saglar
       synchronize: true,         // Geliştirme ortamında veritabanı şemasını otomatik olarak senkronize eder

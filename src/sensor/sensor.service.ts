@@ -1,7 +1,6 @@
-import { Injectable,Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { SensorReading } from './sensor-reading.entity';
 
 @Injectable()
@@ -9,30 +8,55 @@ export class SensorService {
   private readonly logger = new Logger(SensorService.name);
 
   constructor(
-    private configService: ConfigService,
     @InjectRepository(SensorReading)
-    private readonly sensorReadingRepository: Repository<SensorReading>,  
+    private readonly sensorReadingRepository: Repository<SensorReading>,
   ) {}
 
   getSensorStatus() {
-    return {
-      brokerUrl: this.configService.get<string>('MQTT_BROKER_URL'),
-      topic: this.configService.get<string>('MQTT_TOPIC'),
-      status: 'active',
-    };
+    return { status: 'active', timestamp: new Date().toISOString() };
   }
 
-async saveReading(payload: any) {
-    if (!payload) return;
+  async getAllReadings(): Promise<SensorReading[]> {
+    return await this.sensorReadingRepository.find({
+      order: { timestamp: 'DESC' },
+    });
+  }
 
-    this.logger.log(`Sensör verisi kaydediliyor: ${JSON.stringify(payload)}`);
-
+  async saveReading(data: any) {
+    this.logger.log(`Sensör verisi kaydediliyor: ${JSON.stringify(data)}`);
+    
+    // Entity'deki alanlarla birebir eşleşen yapı (deviceId kaldırıldı)
     const reading = this.sensorReadingRepository.create({
-      pm1_0: payload.pm1_0,
-      pm2_5: payload.pm2_5,
-      pm4_0: payload.pm4_0,
-      pm10: payload.pm10,
+      timestamp: data.timestamp,
+      pm1_0: data.metrics?.pm1_0,
+      pm2_5: data.metrics?.pm2_5,
+      pm4_0: data.metrics?.pm4_0,
+      pm10: data.metrics?.pm10,
     });
 
     return await this.sensorReadingRepository.save(reading);
   }
+
+  async getLatestReading(): Promise<SensorReading | null> {
+    const readings =await this.sensorReadingRepository.find({
+      order: { timestamp: 'DESC' },
+      take: 1,
+    });
+    return readings.length > 0 ? readings[0] : null;
+  }
+  async getHistoryReadings(from: string, to: string): Promise<SensorReading[]> {
+    return await this.sensorReadingRepository.find({
+      where: {
+        timestamp: Between(new Date(from), new Date(to)),
+      },
+      order: { timestamp: 'ASC' },
+    });
+  }
+  
+  async clearAllData() {
+    await this.sensorReadingRepository.clear();
+    return { message: 'Tüm sensör verileri temizlendi.' };
+  }
+
+  
+}
